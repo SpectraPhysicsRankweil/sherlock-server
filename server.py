@@ -1,15 +1,14 @@
 from collections import defaultdict
 from aiohttp import web
 
+
 def get_remote_ip(request):
     return request.headers.get('X-Real-IP', request.remote)
 
+
 async def index(request):
-    database = request.app['database']
-    devices = database[get_remote_ip(request)]
-    response_text = '\n'.join(['%r: %r' % (name, value['ip_list']) for name, value in devices.items()])
-    response_text += '\n' + repr(database)
-    return web.Response(text=response_text)
+    return web.FileResponse('./static/index.html')
+
 
 async def register(request):
     database = request.app['database']
@@ -22,6 +21,12 @@ async def register(request):
     database[get_remote_ip(request)][request_data['identifier']] = request_data
     return web.Response()
 
+
+async def query(request):
+    database = request.app['database']
+    devices = list(database[get_remote_ip(request)].values())
+    return web.json_response(devices)
+
 app = web.Application()
 
 app['database'] = defaultdict(lambda: defaultdict(dict))
@@ -32,6 +37,8 @@ app['database'] = defaultdict(lambda: defaultdict(dict))
 #  - "ip_list": list with ip adresses (as strings)
 
 app.add_routes([web.get('/', index),
+                web.get('/api/query', query),
                 web.post('/api/register', register)])
+app.router.add_static('/', path='static', name='static')
 
 web.run_app(app, port=8001)
