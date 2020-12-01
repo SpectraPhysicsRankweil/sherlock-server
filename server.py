@@ -41,4 +41,4 @@ app.add_routes([web.get('/', index),
                 web.post('/api/register', register)])
 app.router.add_static('/', path='static', name='static')
 
-web.run_app(app, port=8001)
+web.run_app(app, port=80)
